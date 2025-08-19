@@ -1,8 +1,12 @@
 from constants import *
 from circleshape import CircleShape
+from shot import Shot
 import pygame # type: ignore 
 
 class Player(CircleShape):
+    
+    PLAYER_SHOOT_COOLDOWN = 0
+
     def __init__(self, x, y):
         super().__init__(x, y, PLAYER_RADIUS)
         self.rotation = 0  # Player's rotation in degrees
@@ -36,8 +40,24 @@ class Player(CircleShape):
             self.move(dt)
         if keys[pygame.K_s]:
             self.move(-dt)
-        self.rotation %= 360
-
-    
-
         
+        # Rising edge detection for spacebar
+        space_pressed_this_frame = keys[pygame.K_SPACE]
+        if space_pressed_this_frame and not self.space_pressed_last_frame:
+            self.shoot()
+        
+        # Update the previous state for next frame
+        self.space_pressed_last_frame = space_pressed_this_frame
+
+        self.rotation %= 360
+        self.PLAYER_SHOOT_COOLDOWN -= dt
+
+    def shoot(self):
+        if self.PLAYER_SHOOT_COOLDOWN <= 0:
+            shot = Shot(
+                self.position.x, 
+                self.position.y, 
+                SHOT_RADIUS, 
+                pygame.Vector2(0, 1).rotate(self.rotation) * PLAYER_SHOT_SPEED
+            )
+        self.PLAYER_SHOOT_COOLDOWN = 0.3  # Cooldown time in seconds
